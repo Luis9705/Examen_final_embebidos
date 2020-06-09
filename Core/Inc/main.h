@@ -32,7 +32,9 @@ extern "C" {
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-
+#include "print.h"
+#include "LIDAR.h"
+#include "buttons.h"
 /* USER CODE END Includes */
 
 /* Exported types ------------------------------------------------------------*/
@@ -58,6 +60,12 @@ void Error_Handler(void);
 /* USER CODE END EFP */
 
 /* Private defines -----------------------------------------------------------*/
+#define DOWN_THR_Pin GPIO_PIN_12
+#define DOWN_THR_GPIO_Port GPIOB
+#define DOWN_THR_EXTI_IRQn EXTI15_10_IRQn
+#define UP_THR_Pin GPIO_PIN_13
+#define UP_THR_GPIO_Port GPIOB
+#define UP_THR_EXTI_IRQn EXTI15_10_IRQn
 /* USER CODE BEGIN Private defines */
 
 /* USER CODE END Private defines */

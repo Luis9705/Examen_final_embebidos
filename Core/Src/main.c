@@ -21,6 +21,8 @@
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
 #include "cmsis_os.h"
+#include "i2c.h"
+#include "usart.h"
 #include "gpio.h"
 
 /* Private includes ----------------------------------------------------------*/
@@ -57,6 +59,31 @@ void MX_FREERTOS_Init(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
+
+int main(void)
+{
+
+	HAL_Init();
+	SystemClock_Config();
+
+
+	print_setup();
+	LIDAR_setup();
+	buttons_setup();
+
+
+	osKernelInitialize();
+	MX_FREERTOS_Init();
+	osKernelStart();
+
+	  while (1)
+	  {
+		/* USER CODE END WHILE */
+
+		/* USER CODE BEGIN 3 */
+	  }
+}
+
 
 /* USER CODE END 0 */
 
