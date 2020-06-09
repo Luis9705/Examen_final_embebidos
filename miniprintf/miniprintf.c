@@ -5,7 +5,6 @@
  *      Author: FLL1GA
  */
 
-
 //  Copyright 2020 Copyright Equipo 2
 /* Minimal printf() facility for MCUs
  * Warren W. Gay VE3WWG,   Sun Feb 12 2017

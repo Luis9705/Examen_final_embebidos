@@ -1,5 +1,5 @@
 /*
- * temp_sensor.c
+ * LIDAR.c
  *
  *  Created on: May 2, 2020
  *      Author: FLL1GA
@@ -14,7 +14,7 @@
 #include "main.h"
 
 /**
- * @brief Sets up the ADC peripherals needed for the temperature sensor.
+ * @brief Sets up the ADC peripherals needed for the LIDAR sensor.
  * @retval None
  */
 void LIDAR_setup(void) {
@@ -23,8 +23,8 @@ void LIDAR_setup(void) {
 }
 
 /**
- * @brief Reads the ADC value and returns the temperature in degrees.
- * @return temperature
+ * @brief Reads the ADC value and returns the distance in centimeters.
+ * @retval distance
  */
 uint16_t LIDAR_read(void) {
     uint16_t adc_data = adc_read();

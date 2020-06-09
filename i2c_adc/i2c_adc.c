@@ -8,19 +8,17 @@
 /// @file i2c_adc.c
 /// @brief Functions to use I2C_ADC
 //  Copyright 2020 Copyright Equipo 2
-#include <stdint.h>
-#include <stdbool.h>
-#include "i2c_adc.h"
-#include "main.h"
-#include "i2c.h"
+#include <stdint.h>		///<stdint header
+#include <stdbool.h>	///<stdbool header
+#include "i2c_adc.h"	///<i2c_adc header
+#include "main.h"		///<main header
+#include "i2c.h"		///<i2c header
 
-I2C_HandleTypeDef * hi2c;						  ///<
+I2C_HandleTypeDef * hi2c;				  ///<I2C Handle
 
 uint8_t ads1115_addr = 0b01001000 <<1;            ///<I2C ADC Address.
-uint8_t conversion_reg = 0x0;                     ///<Conversion register
-// address.
-uint8_t config_reg = 0x1;                         ///<Configuration register
-// address.
+uint8_t conversion_reg = 0x0;                     ///<Conversion register address.
+uint8_t config_reg = 0x1;                         ///<Configuration register address.
 uint8_t config_msb = 0b11000010;  // 0b11000100;     /// <Start a single
 // conversion (when in power-down state). AINP = AIN0 and AINN = GND,
 // FSR = ±4.096 V, Continuous-conversion mode.
@@ -54,8 +52,7 @@ void adc_setup(void) {
 
 /**
  * @brief Reads the value of the ADC.
- * @param[out] data
- * @retval None
+ * @retval data
  */
 uint16_t adc_read(void) {
     uint8_t msb_data = 0x0;        /// MSB Read I2C byte
@@ -81,8 +78,7 @@ uint16_t adc_read(void) {
 /**
  * @brief Scales the adc value to a given voltage scale.
  * @param[in] data
- * @param[out] scaled_value
- * @retval None
+ * @retval scaled_value
  */
 float adc_convert_voltage(uint16_t data) {
     float scale = 125E-6;  // 62.5E-6;
