@@ -67,7 +67,8 @@ void Error_Handler(void);
 #define UP_THR_GPIO_Port GPIOB
 #define UP_THR_EXTI_IRQn EXTI15_10_IRQn
 /* USER CODE BEGIN Private defines */
-
+#define DOWN_THR_MASK (1<<0)
+#define UP_THR_MASK (1<<1)
 /* USER CODE END Private defines */
 
 #ifdef __cplusplus

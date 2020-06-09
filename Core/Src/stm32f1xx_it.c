@@ -25,6 +25,8 @@
 #include "task.h"
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
+#include "freertos.h"
+#include "cmsis_os.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -44,7 +46,8 @@
 
 /* Private variables ---------------------------------------------------------*/
 /* USER CODE BEGIN PV */
-
+extern osEventFlagsId_t buttonEventFlags;
+extern char button_pressed;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -180,7 +183,17 @@ void TIM1_UP_IRQHandler(void)
 void EXTI15_10_IRQHandler(void)
 {
   /* USER CODE BEGIN EXTI15_10_IRQn 0 */
-
+	if(button_pressed == 0){
+		button_pressed = 1;
+		if(getButtonUpThr_STATUS()==BUTTON_ON)
+		{
+			osEventFlagsSet(buttonEventFlags, UP_THR_MASK);
+		}
+		else if(getButtonDownThr_STATUS()==BUTTON_ON)
+		{
+			osEventFlagsSet(buttonEventFlags, DOWN_THR_MASK);
+		}
+	}
   /* USER CODE END EXTI15_10_IRQn 0 */
   HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_12);
   HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_13);

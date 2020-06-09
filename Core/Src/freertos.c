@@ -31,12 +31,17 @@
 
 /* Private typedef -----------------------------------------------------------*/
 /* USER CODE BEGIN PTD */
-
+typedef enum  {
+  UPDATE_UP_THR,
+  UPDATE_DOWN_THR
+}update_thr_Type;
 /* USER CODE END PTD */
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-
+#define THR_INTERVAL 10
+#define MAX_DISTANCE 330
+#define MIN_DISTANCE 0
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -46,6 +51,9 @@
 
 /* Private variables ---------------------------------------------------------*/
 /* USER CODE BEGIN Variables */
+
+uint16_t D_THRESH = 100;
+char button_pressed = 0;
 
 /* USER CODE END Variables */
 /* Definitions for readSensor_Task */
@@ -83,6 +91,13 @@ const osThreadAttr_t updateThreshold_attributes = {
   .priority = (osPriority_t) osPriorityLow,
   .stack_size = 128 * 4
 };
+/* Definitions for oneSecond_Task */
+osThreadId_t oneSecond_TaskHandle;
+const osThreadAttr_t oneSecond_Task_attributes = {
+  .name = "oneSecond_Task",
+  .priority = (osPriority_t) osPriorityLow,
+  .stack_size = 128 * 4
+};
 /* Definitions for distanceQueue */
 osMessageQueueId_t distanceQueueHandle;
 const osMessageQueueAttr_t distanceQueue_attributes = {
@@ -98,10 +113,20 @@ osMessageQueueId_t distanceAlarmQueueHandle;
 const osMessageQueueAttr_t distanceAlarmQueue_attributes = {
   .name = "distanceAlarmQueue"
 };
+/* Definitions for printMutex */
+osMutexId_t printMutexHandle;
+const osMutexAttr_t printMutex_attributes = {
+  .name = "printMutex"
+};
+/* Definitions for oneSecondSemaphore */
+osSemaphoreId_t oneSecondSemaphoreHandle;
+const osSemaphoreAttr_t oneSecondSemaphore_attributes = {
+  .name = "oneSecondSemaphore"
+};
 
 /* Private function prototypes -----------------------------------------------*/
 /* USER CODE BEGIN FunctionPrototypes */
-   
+osEventFlagsId_t buttonEventFlags;                    // event flags id
 /* USER CODE END FunctionPrototypes */
 
 void readSensorTask(void *argument);
@@ -109,6 +134,7 @@ void printOutputTask(void *argument);
 void alarmTask(void *argument);
 void debouncingTask(void *argument);
 void updateThresholdTask(void *argument);
+void oneSecondTask(void *argument);
 
 void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
 
@@ -121,10 +147,17 @@ void MX_FREERTOS_Init(void) {
   /* USER CODE BEGIN Init */
        
   /* USER CODE END Init */
+  /* Create the mutex(es) */
+  /* creation of printMutex */
+  printMutexHandle = osMutexNew(&printMutex_attributes);
 
   /* USER CODE BEGIN RTOS_MUTEX */
   /* add mutexes, ... */
   /* USER CODE END RTOS_MUTEX */
+
+  /* Create the semaphores(s) */
+  /* creation of oneSecondSemaphore */
+  oneSecondSemaphoreHandle = osSemaphoreNew(1, 1, &oneSecondSemaphore_attributes);
 
   /* USER CODE BEGIN RTOS_SEMAPHORES */
   /* add semaphores, ... */
@@ -139,7 +172,7 @@ void MX_FREERTOS_Init(void) {
   distanceQueueHandle = osMessageQueueNew (16, sizeof(uint16_t), &distanceQueue_attributes);
 
   /* creation of buttonCMDQueue */
-  buttonCMDQueueHandle = osMessageQueueNew (16, sizeof(uint16_t), &buttonCMDQueue_attributes);
+  buttonCMDQueueHandle = osMessageQueueNew (16, sizeof(uint8_t), &buttonCMDQueue_attributes);
 
   /* creation of distanceAlarmQueue */
   distanceAlarmQueueHandle = osMessageQueueNew (16, sizeof(uint16_t), &distanceAlarmQueue_attributes);
@@ -164,8 +197,12 @@ void MX_FREERTOS_Init(void) {
   /* creation of updateThreshold */
   updateThresholdHandle = osThreadNew(updateThresholdTask, NULL, &updateThreshold_attributes);
 
+  /* creation of oneSecond_Task */
+  oneSecond_TaskHandle = osThreadNew(oneSecondTask, NULL, &oneSecond_Task_attributes);
+
   /* USER CODE BEGIN RTOS_THREADS */
   /* add threads, ... */
+  buttonEventFlags = osEventFlagsNew(NULL);
   /* USER CODE END RTOS_THREADS */
 
 }
@@ -183,7 +220,13 @@ void readSensorTask(void *argument)
   /* Infinite loop */
   for(;;)
   {
-    osDelay(1);
+	  //sensing distance
+	  uint16_t  distance = LIDAR_read();
+
+	  osMessageQueuePut(distanceQueueHandle, &distance, 0U, osWaitForever);
+	  osMessageQueuePut(distanceAlarmQueueHandle, &distance, 0U, osWaitForever);
+
+	  osDelay(10);
   }
   /* USER CODE END readSensorTask */
 }
@@ -199,9 +242,23 @@ void printOutputTask(void *argument)
 {
   /* USER CODE BEGIN printOutputTask */
   /* Infinite loop */
+
+	uint16_t distance;
+	osStatus_t status;
   for(;;)
   {
-    osDelay(1);
+	  status = osMessageQueueGet(distanceQueueHandle, &distance, NULL,  osWaitForever);   // wait for message
+
+		if (status == osOK) {
+
+			osSemaphoreAcquire(oneSecondSemaphoreHandle, osWaitForever); //wait for 1 second
+			  osStatus_t result = osMutexAcquire(printMutexHandle, osWaitForever);
+			  if (result == osOK) {
+				  print("Distance: %d cm", distance);
+			    }
+			    osMutexRelease(printMutexHandle);
+
+		}
   }
   /* USER CODE END printOutputTask */
 }
@@ -217,10 +274,24 @@ void alarmTask(void *argument)
 {
   /* USER CODE BEGIN alarmTask */
   /* Infinite loop */
-  for(;;)
-  {
-    osDelay(1);
-  }
+	uint16_t distance;
+	osStatus_t status;
+	  for(;;)
+	  {
+		  status = osMessageQueueGet(distanceAlarmQueueHandle, &distance, NULL,  osWaitForever);   // wait for message
+
+			if (status == osOK) {
+
+				if(distance < D_THRESH ){
+					  osStatus_t result = osMutexAcquire(printMutexHandle, osWaitForever);
+					  if (result == osOK) {
+						  print("Sensor is too close!!");
+					    }
+					    osMutexRelease(printMutexHandle);
+				}
+
+			}
+	  }
   /* USER CODE END alarmTask */
 }
 
@@ -235,10 +306,30 @@ void debouncingTask(void *argument)
 {
   /* USER CODE BEGIN debouncingTask */
   /* Infinite loop */
-  for(;;)
-  {
-    osDelay(1);
-  }
+		uint32_t flags;
+		uint8_t updateCmd;
+	  for(;;)
+	  {
+		 flags = osEventFlagsWait(buttonEventFlags,
+				 DOWN_THR_MASK |
+				 UP_THR_MASK , osFlagsWaitAny, osWaitForever);
+	    if(flags!=0){ //A Button was pressed
+	    	osDelay(200); //Wait for 10ms
+	    	//HAL_NVIC_EnableIRQ(EXTI15_10_IRQn);
+	        if(flags & DOWN_THR_MASK){ //The Button was pressed
+	        	updateCmd = UPDATE_DOWN_THR;
+	        	osEventFlagsClear(buttonEventFlags, DOWN_THR_MASK);
+	        }
+	        else if(flags & UP_THR_MASK){ //The Button was pressed
+	        	updateCmd = UPDATE_UP_THR;
+	        	osEventFlagsClear(buttonEventFlags, UP_THR_MASK);
+	        }
+
+	        osMessageQueuePut(buttonCMDQueueHandle, &updateCmd, 0U, osWaitForever);
+	        button_pressed = 0;
+	    }
+
+	  }
   /* USER CODE END debouncingTask */
 }
 
@@ -253,11 +344,45 @@ void updateThresholdTask(void *argument)
 {
   /* USER CODE BEGIN updateThresholdTask */
   /* Infinite loop */
+	uint8_t updateCmd ;
+	osStatus_t status;
+	  for(;;)
+	  {
+		status = osMessageQueueGet(buttonCMDQueueHandle, &updateCmd, NULL, osWaitForever);   // wait for message
+		if (status == osOK) {
+			switch(updateCmd){
+				case UPDATE_UP_THR:
+					if (D_THRESH + 1 <= MAX_DISTANCE) D_THRESH += THR_INTERVAL;
+					break;
+				case UPDATE_DOWN_THR:
+					if (D_THRESH - 1  >= MIN_DISTANCE) D_THRESH -= THR_INTERVAL;
+					break;
+				default:
+					break;
+			}
+		}
+	  }
+  /* USER CODE END updateThresholdTask */
+}
+
+/* USER CODE BEGIN Header_oneSecondTask */
+/**
+* @brief Function implementing the oneSecond_Task thread.
+* @param argument: Not used
+* @retval None
+*/
+/* USER CODE END Header_oneSecondTask */
+void oneSecondTask(void *argument)
+{
+  /* USER CODE BEGIN oneSecondTask */
+  /* Infinite loop */
   for(;;)
   {
-    osDelay(1);
+    osDelay(1000);
+
+    osSemaphoreRelease(oneSecondSemaphoreHandle);
   }
-  /* USER CODE END updateThresholdTask */
+  /* USER CODE END oneSecondTask */
 }
 
 /* Private application code --------------------------------------------------*/
