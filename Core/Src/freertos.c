@@ -60,7 +60,7 @@ char button_pressed = 0;
 osThreadId_t readSensor_TaskHandle;
 const osThreadAttr_t readSensor_Task_attributes = {
   .name = "readSensor_Task",
-  .priority = (osPriority_t) osPriorityNormal,
+  .priority = (osPriority_t) osPriorityHigh,
   .stack_size = 128 * 4
 };
 /* Definitions for printOutput_Tas */
@@ -74,28 +74,28 @@ const osThreadAttr_t printOutput_Tas_attributes = {
 osThreadId_t alarm_TaskHandle;
 const osThreadAttr_t alarm_Task_attributes = {
   .name = "alarm_Task",
-  .priority = (osPriority_t) osPriorityLow,
+  .priority = (osPriority_t) osPriorityAboveNormal,
   .stack_size = 128 * 4
 };
 /* Definitions for debouncing_Task */
 osThreadId_t debouncing_TaskHandle;
 const osThreadAttr_t debouncing_Task_attributes = {
   .name = "debouncing_Task",
-  .priority = (osPriority_t) osPriorityLow,
+  .priority = (osPriority_t) osPriorityAboveNormal,
   .stack_size = 128 * 4
 };
 /* Definitions for updateThreshold */
 osThreadId_t updateThresholdHandle;
 const osThreadAttr_t updateThreshold_attributes = {
   .name = "updateThreshold",
-  .priority = (osPriority_t) osPriorityLow,
+  .priority = (osPriority_t) osPriorityNormal,
   .stack_size = 128 * 4
 };
 /* Definitions for oneSecond_Task */
 osThreadId_t oneSecond_TaskHandle;
 const osThreadAttr_t oneSecond_Task_attributes = {
   .name = "oneSecond_Task",
-  .priority = (osPriority_t) osPriorityLow,
+  .priority = (osPriority_t) osPriorityNormal,
   .stack_size = 128 * 4
 };
 /* Definitions for distanceQueue */
@@ -254,7 +254,7 @@ void printOutputTask(void *argument)
 			osSemaphoreAcquire(oneSecondSemaphoreHandle, osWaitForever); //wait for 1 second
 			  osStatus_t result = osMutexAcquire(printMutexHandle, osWaitForever);
 			  if (result == osOK) {
-				  print("Distance: %d cm", distance);
+				  print("Distance: %d cm\r\n", distance);
 			    }
 			    osMutexRelease(printMutexHandle);
 
@@ -285,7 +285,7 @@ void alarmTask(void *argument)
 				if(distance < D_THRESH ){
 					  osStatus_t result = osMutexAcquire(printMutexHandle, osWaitForever);
 					  if (result == osOK) {
-						  print("Sensor is too close!!");
+						  print("Sensor is too close!!\r\n");
 					    }
 					    osMutexRelease(printMutexHandle);
 				}
@@ -360,6 +360,11 @@ void updateThresholdTask(void *argument)
 				default:
 					break;
 			}
+			  osStatus_t result = osMutexAcquire(printMutexHandle, osWaitForever);
+			  if (result == osOK) {
+				  print("Distance Threshold updated to: %d\r\n", D_THRESH);
+			    }
+			    osMutexRelease(printMutexHandle);
 		}
 	  }
   /* USER CODE END updateThresholdTask */
