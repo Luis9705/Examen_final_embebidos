@@ -32,16 +32,16 @@
 /* Private typedef -----------------------------------------------------------*/
 /* USER CODE BEGIN PTD */
 typedef enum  {
-  UPDATE_UP_THR,
-  UPDATE_DOWN_THR
+  UPDATE_UP_THR, ///<!UPDATE UP_THR BUTTON
+  UPDATE_DOWN_THR ///<!UPDATE DOWN_THR BUTTON
 }update_thr_Type;
 /* USER CODE END PTD */
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-#define THR_INTERVAL 10
-#define MAX_DISTANCE 330
-#define MIN_DISTANCE 0
+#define THR_INTERVAL 10		///<Macro for Threshold update step
+#define MAX_DISTANCE 330	///<Macro for max distance threshold
+#define MIN_DISTANCE 0		///<Macro for min distance threshold
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -52,8 +52,8 @@ typedef enum  {
 /* Private variables ---------------------------------------------------------*/
 /* USER CODE BEGIN Variables */
 
-uint16_t D_THRESH = 100;
-char button_pressed = 0;
+uint16_t D_THRESH = 100;	///<Default distance threshold.
+char button_pressed = 0;	///<Button pressed flag.
 
 /* USER CODE END Variables */
 /* Definitions for readSensor_Task */
@@ -126,7 +126,7 @@ const osSemaphoreAttr_t oneSecondSemaphore_attributes = {
 
 /* Private function prototypes -----------------------------------------------*/
 /* USER CODE BEGIN FunctionPrototypes */
-osEventFlagsId_t buttonEventFlags;                    // event flags id
+osEventFlagsId_t buttonEventFlags;                    ///<Event flags id
 /* USER CODE END FunctionPrototypes */
 
 void readSensorTask(void *argument);
@@ -202,7 +202,7 @@ void MX_FREERTOS_Init(void) {
 
   /* USER CODE BEGIN RTOS_THREADS */
   /* add threads, ... */
-  buttonEventFlags = osEventFlagsNew(NULL);
+  buttonEventFlags = osEventFlagsNew(NULL);		///<Button event group.
   /* USER CODE END RTOS_THREADS */
 
 }
@@ -233,7 +233,7 @@ void readSensorTask(void *argument)
 
 /* USER CODE BEGIN Header_printOutputTask */
 /**
-* @brief Function implementing the printOutput_Tas thread.
+* @brief Function implementing the printOutput_Task thread.
 * @param argument: Not used
 * @retval None
 */
